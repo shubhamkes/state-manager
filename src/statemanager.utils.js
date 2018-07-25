@@ -2,6 +2,8 @@
  * Utility method that Manages state, persist api response and notify back by callback method provided as param 
  * Also based on Internet connectivity, can save api call which require less attention and invoke them later 
  * Supports app working even when device is not connected any network
+ * 
+ * This library maintains list of events available for subscription and subscribed events 
  ******************************************************************************************************************/
 import { SetItem, GetItem } from 'storage-utility';
 // import { IsEqualObject } from './common.utils';
@@ -13,7 +15,8 @@ const isEqual = require('lodash.isequal');
  * @param  {object} object
  * @param  {object} otherObject
  */
-export function IsEqualObject(object, otherObject) {
+function IsEqualObject(object, otherObject) {
+    console.log(isEqual(object, otherObject), object, otherObject);
     return isEqual(object, otherObject);
 }
 
@@ -42,6 +45,13 @@ const SubscribedStoreEvent = {};
 let alertVisible = false;
 let alertView = undefined;
 
+/**
+ * Makes available events for listening
+ * @param  {string} {eventName
+ * @param  {any} data
+ * @param  {any} objParams - extra tag to check if event is already subscribed
+ * @param  {boolean} isMemoryStore}
+ */
 export function StoreEvent({ eventName, data, objParams, isMemoryStore }) {
     new Promise((resolve, reject) => {
         if (!isMemoryStore) {
@@ -63,6 +73,14 @@ export function DeleteEvent({ eventName, isMemoryStore }) {
     }
 }
 
+/**
+ * Start listening for the event
+ * @param  {string} {eventName
+ * @param  {function} callback
+ * @param  {any} extraParams - carry forward as it is while calling back
+ * @param  {object} objParams
+ * @param  {boolean} isMemoryStore}
+ */
 export function SubscribeToEvent({ eventName, callback, extraParams, objParams, isMemoryStore }) {
     new Promise(resolve => {
         const events = (!isMemoryStore ? SubscibedEvent[eventName] : SubscribedStoreEvent[eventName]) || [];
@@ -85,6 +103,12 @@ export function SubscribeToEvent({ eventName, callback, extraParams, objParams, 
     });
 }
 
+/**
+ * Broadcasts event to all subscribed channels
+ * @param  {} {eventName
+ * @param  {} data
+ * @param  {} isMemoryStore}
+ */
 export function TransmitToAllEvent({ eventName, data, isMemoryStore }) {
     let eventDetail, subscribedEvent;
     if (!isMemoryStore) {
@@ -105,7 +129,7 @@ export function TransmitToAllEvent({ eventName, data, isMemoryStore }) {
     });
 }
 
-export function TransmitToSingleEvent({ eventName, isMemoryStore, callback, extraParams }) {
+function TransmitToSingleEvent({ eventName, isMemoryStore, callback, extraParams }) {
     let eventDetail;
     if (!isMemoryStore) {
         eventDetail = Store[eventName];
@@ -121,6 +145,13 @@ export function TransmitToSingleEvent({ eventName, isMemoryStore, callback, extr
 
 }
 
+/**
+ * Tells if event is already subscribed
+ * Can be used to detect if already there is a listener for given eventName
+ * @param  {string} {eventName
+ * @param  {boolean} isMemoryStore
+ * @param  {any} objParams (optional) - extra tag for identifying event accurately
+ */
 export function IsEventAvailable({ eventName, isMemoryStore, objParams }) {
     let eventsAvailableInStore;
     if (!isMemoryStore) {
@@ -135,6 +166,13 @@ export function IsEventAvailable({ eventName, isMemoryStore, objParams }) {
     return false;
 }
 
+/**
+ * Unsubscribe event from listening 
+ * @param  {string} {eventName
+ * @param  {function} callback
+ * @param  {boolean} isMemoryStore
+ * @param  {any} objParams (optional) - extra tag for identifying event accurately
+ */
 export function UnsubscribeEvent({ eventName, callback, isMemoryStore, objParams = {} }) {
     const events = (!isMemoryStore ? SubscibedEvent[eventName] : SubscribedStoreEvent[eventName]) || [];
     // events.push({ callback, extraParams, objParams, isMemoryStore });
@@ -149,6 +187,12 @@ export function UnsubscribeEvent({ eventName, callback, isMemoryStore, objParams
     }
 }
 
+/**
+ * Avoids duplicate subscription of event
+ * @param  {} {events
+ * @param  {} callback
+ * @param  {any} objParams (optional) - extra tag for identifying event accurately
+ */
 function IsAlreadySubscribed({ events, callback, objParams }) {
     if (!(Array.isArray(events) && events.length)) {
         return false;
@@ -162,4 +206,3 @@ function IsAlreadySubscribed({ events, callback, objParams }) {
     }
     return false;
 }
-
