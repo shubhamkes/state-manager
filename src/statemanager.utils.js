@@ -16,7 +16,6 @@ const isEqual = require('lodash.isequal');
  * @param  {object} otherObject
  */
 function IsEqualObject(object, otherObject) {
-    console.log(isEqual(object, otherObject), object, otherObject);
     return isEqual(object, otherObject);
 }
 
@@ -173,12 +172,12 @@ export function IsEventAvailable({ eventName, isMemoryStore, objParams }) {
  * @param  {boolean} isMemoryStore
  * @param  {any} objParams (optional) - extra tag for identifying event accurately
  */
-export function UnsubscribeEvent({ eventName, callback, isMemoryStore, objParams = {} }) {
+export function UnsubscribeEvent({ eventName, callback, isMemoryStore, objParams }) {
     const events = (!isMemoryStore ? SubscibedEvent[eventName] : SubscribedStoreEvent[eventName]) || [];
     // events.push({ callback, extraParams, objParams, isMemoryStore });
     const index = IsAlreadySubscribed({ events, callback, objParams });
-    if (index != false) {
-        events.splice(index, -1);
+    if (index !== false) {
+        events.splice(index, 1);
     }
     if (!isMemoryStore) {
         SubscibedEvent[eventName] = events;
