@@ -1,6 +1,6 @@
 {
     "name": "state-manager-utility",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "",
     "main": "build/index.js",
     "size-limit": [
@@ -23,7 +23,7 @@
     },
     "author": "shubham.kesarwani89@gmail.com",
     "peerDependencies": {
-        "storage-utility": "0.0.7"
+        "storage-utility": "0.0.15"
     },
     "devDependencies": {
         "babel-cli": "^6.26.0",
@@ -33,7 +33,7 @@
         "babel-plugin-transform-object-rest-spread": "^6.26.0",
         "babel-preset-env": "^1.7.0",
         "size-limit": "^0.18.5",
-        "storage-utility": "0.0.7",
+        "storage-utility": "0.0.15",
         "webpack": "^4.16.2",
         "webpack-cli": "^3.1.0"
     },

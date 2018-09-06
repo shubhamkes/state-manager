@@ -3,9 +3,12 @@
         [
             "env",
             {
-                "targets": {
-                    "node": "current"
-                }
+                "targets": [
+                    {
+                        "name": "node",
+                        "version": 6
+                    }
+                ]
             }
         ]
     ],
