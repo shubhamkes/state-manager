@@ -1,6 +1,6 @@
 {
     "name": "state-manager-utility",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "description": "",
     "main": "build/index.js",
     "size-limit": [
@@ -19,7 +19,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/drivezy/drivezy-user-utils.git"
+        "url": "https://github.com/drivezy/state-manager.git"
     },
     "author": "shubham.kesarwani89@gmail.com",
     "peerDependencies": {
