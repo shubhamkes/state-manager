@@ -5,7 +5,7 @@ Target - Front End Projects
 ### How do I get set up? ###
 
 * Run 'npm i state-manager --save'
-* If using in React Native, Must have [storage-utility](https://github.com/drivezy/storage-utility) as dependency. Follow steps for initialising the package for native
+* If using in React Native, Must have [state-manager-utility](https://github.com/drivezy/storage-utility) as dependency. Follow steps for initialising the package for native
 
 ### Sample 
 ```
