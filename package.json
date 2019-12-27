@@ -1,7 +1,7 @@
 {
     "name": "state-manager-utility",
-    "version": "0.0.8",
-    "description": "",
+    "version": "1.0.0",
+    "description": "Global state management library",
     "main": "build/index.js",
     "size-limit": [
         {
@@ -13,7 +13,7 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "webpack-dev-server --mode development",
         "transpile": "babel src -d build --copy-files",
-        "prepublishOnly": "npm run transpile",
+        "prepublishOnly": "npm run build",
         "build": "webpack --mode production",
         "publish-demo": "npm run build && npm run deploy"
     },
@@ -35,7 +35,7 @@
         "size-limit": "^0.18.5",
         "storage-utility": "0.0.15",
         "webpack": "^4.16.2",
-        "webpack-cli": "^3.1.0"
+        "webpack-cli": "^3.3.10"
     },
     "keywords": [
         "drivezy",
