@@ -4,11 +4,14 @@ Target - Front End Projects
 
 ### How do I get set up? ###
 
-* Run 'npm i state-manager-utility --save'
+```
+npm i state-manager-utility --save
+```
+
 * If using in React Native, Must have [state-manager-utility](https://github.com/drivezy/storage-utility) as dependency. Follow steps for initialising the package for native
 
 ### Sample 
-```
+```javascript
     import React, { Component } from 'react';
     import { SubscribeToEvent, StoreEvent, TransmitToAllEvent } from 'state-manager-utility';
 
@@ -34,7 +37,7 @@ Target - Front End Projects
 
 * StoreEvent - Makes available events for listening. Adds in the list of events available for subscription
 
-```
+```javascript
     /**
     * @param  {string} {eventName
     * @param  {any} data
@@ -48,7 +51,7 @@ Target - Front End Projects
 * SubscribeToEvent - Subscribe to event.
  As soon as event is subscribed if event was already available for subscription, immediately callback is invoked and after that everytime 'StoreEvent' or 'TransmitToAllEvent' for same eventName will invoke this callback
 
-```
+```javascript
     /**
     * @param  {string} {eventName
     * @param  {function} callback
@@ -61,7 +64,7 @@ Target - Front End Projects
 
 * UnsubscribeEvent - Unsubscribe to event
 
-```
+```javascript
     /**
     * Unsubscribe event from listening 
     * @param  {string} {eventName
@@ -77,7 +80,7 @@ Target - Front End Projects
 Can be used to detect if already there is a listener for given eventName
 
 
-```
+```javascript
     /**
     * @param  {string} {eventName
     * @param  {boolean} isMemoryStore
