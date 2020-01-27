@@ -39,28 +39,26 @@ const SubscibedEvent = {};
 const SubscribedStoreEvent = {};
 
 /**
- * Stores the status of the alerts
- */
-let alertVisible = false;
-let alertView = undefined;
-
-/**
  * Makes available events for listening
  * @param  {string} {eventName
  * @param  {any} data
  * @param  {any} objParams - extra tag to check if event is already subscribed
  * @param  {boolean} isMemoryStore}
  */
-export function StoreEvent({ eventName, data, objParams, isMemoryStore }) {
-    new Promise((resolve, reject) => {
+export function StoreEvent({ eventName, data, objParams, isMemoryStore, isTemp = false }) {
+    // new Promise((resolve, reject) => {
+    const eventDetail = { eventName, data, objParams };
+    if (!isTemp) { // temporary broadcastings needn't to be stored
         if (!isMemoryStore) {
-            Store[eventName] = { data, objParams };
+            Store[eventName] = eventDetail;
         } else {
-            MemoryStore[eventName] = { data, objParams };
+            MemoryStore[eventName] = eventDetail;
             SetItem('memoryStore', MemoryStore);
         }
-        TransmitToAllEvent({ eventName, data, isMemoryStore });
-    });
+    }
+
+    TransmitToAllEvent({ eventDetail, isMemoryStore });
+    // });
 }
 
 export function DeleteEvent({ eventName, isMemoryStore }) {
@@ -80,26 +78,24 @@ export function DeleteEvent({ eventName, isMemoryStore }) {
  * @param  {object} objParams
  * @param  {boolean} isMemoryStore}
  */
-export function SubscribeToEvent({ eventName, callback, extraParams, objParams, isMemoryStore }) {
-    new Promise(resolve => {
-        const events = (!isMemoryStore ? SubscibedEvent[eventName] : SubscribedStoreEvent[eventName]) || [];
-        // events.push({ callback, extraParams, objParams, isMemoryStore });
+export function SubscribeToEvent({ eventName, callback, extraParams, objParams, isMemoryStore, isTemp = false }) {
+    // new Promise(resolve => {
+    const events = (!isMemoryStore ? SubscibedEvent[eventName] : SubscribedStoreEvent[eventName]) || [];
 
-        const index = IsAlreadySubscribed({ events, callback, objParams });
-        if (index === false) { // makes sure against duplicate event subscription
-            events.push({ callback, extraParams, objParams, isMemoryStore });
-        } else {
-            events[index] = { callback, extraParams, objParams, isMemoryStore };
-        }
+    const index = IsAlreadySubscribed({ events, callback, objParams });
+    const eventDetail = { eventName, callback, extraParams, objParams, isMemoryStore, isTemp };
+    if (index === false) { // makes sure against duplicate event subscription
+        events.push(eventDetail);
+    } else {
+        events[index] = eventDetail;
+    }
 
-        if (!isMemoryStore) {
-            SubscibedEvent[eventName] = events;
-        } else {
-            SubscribedStoreEvent[eventName] = events;
-        }
-        // alert('efe');
-        TransmitToSingleEvent({ eventName, isMemoryStore, callback, extraParams });
-    });
+    if (!isMemoryStore) {
+        SubscibedEvent[eventName] = events;
+    } else {
+        SubscribedStoreEvent[eventName] = events;
+    }
+    TransmitToSingleEvent({ eventDetail, extraParams });
 }
 
 /**
@@ -108,40 +104,33 @@ export function SubscribeToEvent({ eventName, callback, extraParams, objParams, 
  * @param  {} data
  * @param  {} isMemoryStore}
  */
-export function TransmitToAllEvent({ eventName, data, isMemoryStore }) {
-    let eventDetail, subscribedEvent;
+function TransmitToAllEvent({ eventDetail, isMemoryStore }) {
+    let subscribedEvent;
     if (!isMemoryStore) {
-        eventDetail = Store[eventName]; // array of subscribed event for particular event name
-        subscribedEvent = SubscibedEvent[eventName];
+        subscribedEvent = SubscibedEvent[eventDetail.eventName];
     } else {
-        let eventsAvailableInStore = GetItem('memoryStore') || {};
-        eventDetail = eventsAvailableInStore[eventName]; // array of subscribed event for particular event name
-        subscribedEvent = SubscribedStoreEvent[eventName];
+        subscribedEvent = SubscribedStoreEvent[eventDetail.eventName];
     }
     if (!Array.isArray(subscribedEvent) || !eventDetail) {
         return;
     }
     subscribedEvent.forEach(event => {
         if (IsEqualObject(event.objParams, eventDetail.objParams) && event.callback) {
-            event.callback(data || eventDetail.data, { eventName, extraParams: event.extraParams });
+            TransmitToSingleEvent({ eventDetail: event, extraParams: event.extraParams });
         }
     });
 }
 
-function TransmitToSingleEvent({ eventName, isMemoryStore, callback, extraParams }) {
-    let eventDetail;
-    if (!isMemoryStore) {
-        eventDetail = Store[eventName];
-    } else {
-        let eventsAvailableInStore = GetItem('memoryStore') || {};
-        eventDetail = eventsAvailableInStore[eventName]; // array of subscribed event for particular event name
-    }
-
+function TransmitToSingleEvent({ eventDetail, extraParams }) {
     if (!eventDetail) {
         return;
     }
-    callback(eventDetail.data, { eventName, extraParams })
 
+    // if temporary event subscription found, delete after once callback
+    if (eventDetail.isTemp) {
+        delete SubscibedEvent[eventDetail.eventName]; // cause only without memory store one are eligible for temporary broadcasting & capturing
+    }
+    eventDetail.callback(eventDetail.data, { eventName, extraParams })
 }
 
 /**

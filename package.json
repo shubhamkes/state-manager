@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "Global state management library",
     "main": "build/index.js",
+    "sideEffects": false,
     "size-limit": [
         {
             "path": "build/"

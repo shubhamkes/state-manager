@@ -10,6 +10,10 @@ module.exports = {
     resolve: {
         extensions: ['.js'],
     },
+    mode: 'production',
+    optimization: {
+        usedExports: true,
+    },
     module: {
         rules: [
             {
