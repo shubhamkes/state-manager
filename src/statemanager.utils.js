@@ -5,19 +5,7 @@
  * 
  * This library maintains list of events available for subscription and subscribed events 
  ******************************************************************************************************************/
-import { SetItem, GetItem } from 'storage-utility';
-// import { IsEqualObject } from './common.utils';
-const isEqual = require('lodash.isequal');
-
-/**
- * Checks if two given objects are same 
- * NOTE: Mainly used in persitance for identifying if two params are same
- * @param  {object} object
- * @param  {object} otherObject
- */
-function IsEqualObject(object, otherObject) {
-    return isEqual(object, otherObject);
-}
+import { SetItem, GetItem } from './localstorage.utils';
 
 /**
  * Store contains list of all events and apis which is having data and can be subscribed
@@ -28,7 +16,7 @@ function IsEqualObject(object, otherObject) {
  * format=>  {[eventName]: {data: ANY, objParams: {}}};
  */
 const Store = {};
-const MemoryStore = GetItem('memoryStore') || {}; // memory store would ba as same as Store except that is would store its data in asynStorage 
+let MemoryStore = GetItem('memoryStore') || {}; // memory store would ba as same as Store except that is would store its data in asynStorage 
 
 /**
  * SubscribedEvent will store all events which is currently being subscribed and
@@ -39,130 +27,81 @@ const SubscibedEvent = {};
 const SubscribedStoreEvent = {};
 
 /**
- * Stores the status of the alerts
+ * Event Broadcaster method
+ * Event can be broadcasted without storing into state or temporarily
+ * 
+ * Expects eventName and data to be broadcasted
+ * 
+ * @param  {string} {eventName - unique identifier of event
+ * @param  {any} data - to be broadcasted
+ * @param  {any} objParams(optional) - extra tag to check if event is already subscribed 
+ * @param  {boolean} isMemoryStore(optional)=false - if set to true, events will be persisted even after current session(for this to work, initialisation of localstorage util is required)
+ * @param  {boolean} isTemp(optional)=false - determines if event is to be broadcasted only one time
+ * @param  {boolean} dontTransmit(optional)=false - event will be stored with the data but wont be broadcasted immediately after update
  */
-let alertVisible = false;
-let alertView = undefined;
-
-/**
- * Makes available events for listening
- * @param  {string} {eventName
- * @param  {any} data
- * @param  {any} objParams - extra tag to check if event is already subscribed
- * @param  {boolean} isMemoryStore}
- */
-export function StoreEvent({ eventName, data, objParams, isMemoryStore }) {
-    new Promise((resolve, reject) => {
+export function StoreEvent({ eventName, data, objParams, isMemoryStore = false, isTemp = false, dontTransmit = false }) {
+    // new Promise((resolve, reject) => {
+    const eventDetail = { eventName, data, objParams };
+    if (!isTemp) { // temporary broadcastings needn't to be stored
         if (!isMemoryStore) {
-            Store[eventName] = { data, objParams };
+            Store[eventName] = eventDetail;
         } else {
-            MemoryStore[eventName] = { data, objParams };
+            MemoryStore = GetItem('memoryStore') || {};
+            MemoryStore[eventName] = eventDetail;
             SetItem('memoryStore', MemoryStore);
         }
-        TransmitToAllEvent({ eventName, data, isMemoryStore });
-    });
+    }
+
+    if (!dontTransmit) {
+        TransmitToAllEvent({ eventDetail, isMemoryStore });
+    }
+    // });
 }
 
+/**
+ * Removes event detail from the store, hence any listener wont be able getting updates
+ * @param  {string} eventName - unique identifier of event
+ * @param  {boolean} isMemoryStore - default (false) - if set to true, events will be persisted even after current session(for this to work, initialisation of localstorage util is required)
+ */
 export function DeleteEvent({ eventName, isMemoryStore }) {
     if (!isMemoryStore) {
         delete Store[eventName];
     } else {
+        MemoryStore = GetItem('memoryStore') || {};
         delete MemoryStore[eventName];
         SetItem('memoryStore', MemoryStore);
     }
 }
 
 /**
- * Start listening for the event
- * @param  {string} {eventName
- * @param  {function} callback
+ * Event listener method
+ * calls back on event creation or updation
+ * @param  {string} {eventName - unique identifier of event
+ * @param  {function} callback - callback function is invoked to passon the event data
  * @param  {any} extraParams - carry forward as it is while calling back
- * @param  {object} objParams
- * @param  {boolean} isMemoryStore}
+ * @param  {object} objParams (optional) - extra tag to check if event is already subscribed 
+ * @param  {boolean} isMemoryStore - default (false) - if set to true, events will be persisted even after current session(for this to work, initialisation of localstorage util is required)
+ * @param  {boolean} isTemp(optional)=false - determines if event is to be broadcasted only one time
  */
-export function SubscribeToEvent({ eventName, callback, extraParams, objParams, isMemoryStore }) {
-    new Promise(resolve => {
-        const events = (!isMemoryStore ? SubscibedEvent[eventName] : SubscribedStoreEvent[eventName]) || [];
-        // events.push({ callback, extraParams, objParams, isMemoryStore });
+export function SubscribeToEvent({ eventName, callback, extraParams, objParams, isMemoryStore, isTemp = false }) {
+    // new Promise(resolve => {
+    const events = (!isMemoryStore ? SubscibedEvent[eventName] : SubscribedStoreEvent[eventName]) || [];
 
-        const index = IsAlreadySubscribed({ events, callback, objParams });
-        if (index === false) { // makes sure against duplicate event subscription
-            events.push({ callback, extraParams, objParams, isMemoryStore });
-        } else {
-            events[index] = { callback, extraParams, objParams, isMemoryStore };
-        }
-
-        if (!isMemoryStore) {
-            SubscibedEvent[eventName] = events;
-        } else {
-            SubscribedStoreEvent[eventName] = events;
-        }
-        // alert('efe');
-        TransmitToSingleEvent({ eventName, isMemoryStore, callback, extraParams });
-    });
-}
-
-/**
- * Broadcasts event to all subscribed channels
- * @param  {} {eventName
- * @param  {} data
- * @param  {} isMemoryStore}
- */
-export function TransmitToAllEvent({ eventName, data, isMemoryStore }) {
-    let eventDetail, subscribedEvent;
-    if (!isMemoryStore) {
-        eventDetail = Store[eventName]; // array of subscribed event for particular event name
-        subscribedEvent = SubscibedEvent[eventName];
+    const index = IsAlreadySubscribed({ events, callback, objParams });
+    const subscribedEventDetail = { eventName, callback, extraParams, objParams, isMemoryStore, isTemp, index: typeof index == 'number' ? index : events.length };
+    if (index === false) { // makes sure against duplicate event subscription
+        events.push(subscribedEventDetail);
     } else {
-        let eventsAvailableInStore = GetItem('memoryStore') || {};
-        eventDetail = eventsAvailableInStore[eventName]; // array of subscribed event for particular event name
-        subscribedEvent = SubscribedStoreEvent[eventName];
+        events[index] = subscribedEventDetail;
     }
-    if (!Array.isArray(subscribedEvent) || !eventDetail) {
-        return;
-    }
-    subscribedEvent.forEach(event => {
-        if (IsEqualObject(event.objParams, eventDetail.objParams) && event.callback) {
-            event.callback(data || eventDetail.data, { eventName, extraParams: event.extraParams });
-        }
-    });
-}
 
-function TransmitToSingleEvent({ eventName, isMemoryStore, callback, extraParams }) {
-    let eventDetail;
     if (!isMemoryStore) {
-        eventDetail = Store[eventName];
+        SubscibedEvent[eventName] = events;
     } else {
-        let eventsAvailableInStore = GetItem('memoryStore') || {};
-        eventDetail = eventsAvailableInStore[eventName]; // array of subscribed event for particular event name
+        SubscribedStoreEvent[eventName] = events;
     }
-
-    if (!eventDetail) {
-        return;
-    }
-    callback(eventDetail.data, { eventName, extraParams })
-
-}
-
-/**
- * Tells if event is already subscribed
- * Can be used to detect if already there is a listener for given eventName
- * @param  {string} {eventName
- * @param  {boolean} isMemoryStore
- * @param  {any} objParams (optional) - extra tag for identifying event accurately
- */
-export function IsEventAvailable({ eventName, isMemoryStore, objParams }) {
-    let eventsAvailableInStore;
-    if (!isMemoryStore) {
-        eventsAvailableInStore = Store;
-    } else {
-        eventsAvailableInStore = GetItem('memoryStore') || {};
-    }
-    const eventDetail = eventsAvailableInStore[eventName];
-    if (eventDetail && IsEqualObject(eventDetail.objParams, objParams)) {
-        return true;
-    }
-    return false;
+    TransmitToSingleEvent({ subscribedEventDetail, extraParams });
+    // })
 }
 
 /**
@@ -187,6 +126,80 @@ export function UnsubscribeEvent({ eventName, callback, isMemoryStore, objParams
 }
 
 /**
+ * checks if event is already subscribed
+ * Can be used to detect if already there is a listener for given eventName
+ * @param  {string} {eventName
+ * @param  {boolean} isMemoryStore
+ * @param  {any} objParams (optional) - extra tag for identifying event accurately
+ */
+export function IsEventAvailable({ eventName, isMemoryStore, objParams }) {
+    let eventsAvailableInStore;
+    if (!isMemoryStore) {
+        eventsAvailableInStore = Store;
+    } else {
+        eventsAvailableInStore = GetItem('memoryStore') || {};
+    }
+    const eventDetail = eventsAvailableInStore[eventName];
+    if (eventDetail && IsEqualObject(eventDetail.objParams, objParams)) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Broadcasts event to all subscribed channels
+ * @param  {string} {eventName
+ * @param  {any} data
+ * @param  {boolean} isMemoryStore}
+ */
+function TransmitToAllEvent({ eventDetail, isMemoryStore }) {
+    let subscribedEvent;
+    if (!isMemoryStore) {
+        subscribedEvent = SubscibedEvent[eventDetail.eventName];
+    } else {
+        subscribedEvent = SubscribedStoreEvent[eventDetail.eventName];
+    }
+    if (!Array.isArray(subscribedEvent) || !eventDetail) {
+        return;
+    }
+    subscribedEvent.forEach(event => {
+        if (IsEqualObject(event.objParams, eventDetail.objParams) && event.callback) {
+            TransmitToSingleEvent({ eventDetail, subscribedEventDetail: event, extraParams: event.extraParams });
+        }
+    });
+}
+
+/**
+ * Broadcasts event to given event subscribed channel
+ * @param  {} {eventDetail
+ * @param  {} subscribedEventDetail
+ * @param  {} extraParams}
+ */
+function TransmitToSingleEvent({ eventDetail, subscribedEventDetail, extraParams }) {
+    if (!subscribedEventDetail) {
+        return;
+    }
+
+    if (!eventDetail) {
+        if (!subscribedEventDetail.isMemoryStore) {
+            eventDetail = Store[subscribedEventDetail.eventName];
+        } else {
+            MemoryStore = GetItem('memoryStore') || {};
+            eventDetail = MemoryStore[subscribedEventDetail.eventName];
+        }
+    }
+
+    if (!eventDetail) {
+        return;
+    }
+    // if temporary event subscription found, delete after once callback
+    if (subscribedEventDetail.isTemp) {
+        delete SubscibedEvent[subscribedEventDetail.eventName][subscribedEventDetail.index]; // cause only without memory store one are eligible for temporary broadcasting & capturing
+    }
+    subscribedEventDetail.callback(eventDetail.data, { eventName: subscribedEventDetail.eventName, extraParams })
+}
+
+/**
  * Avoids duplicate subscription of event
  * @param  {} {events
  * @param  {} callback
@@ -205,3 +218,19 @@ function IsAlreadySubscribed({ events, callback, objParams }) {
     }
     return false;
 }
+
+/**
+ * Checks if two given objects are same 
+ * NOTE: Mainly used in persitance for identifying if two params are same
+ * @param  {object} object
+ * @param  {object} otherObject
+ */
+function IsEqualObject(x, y) {
+    // return isEqual(object, otherObject);
+    const ok = Object.keys, tx = typeof x, ty = typeof y;
+    return x && y && tx === 'object' && tx === ty ? (
+        ok(x).length === ok(y).length &&
+        ok(x).every(key => deepEqual(x[key], y[key]))
+    ) : (x === y);
+}
+

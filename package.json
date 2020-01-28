@@ -1,8 +1,9 @@
 {
     "name": "state-manager-utility",
-    "version": "1.0.0",
+    "version": "2.0.1",
     "description": "Global state management library",
     "main": "build/index.js",
+    "sideEffects": false,
     "size-limit": [
         {
             "path": "build/"
@@ -38,11 +39,9 @@
         "webpack-cli": "^3.3.10"
     },
     "keywords": [
-        "drivezy",
-        "user-utility"
+        "state-management",
+        "redux-alternative",
+        "pub-sub-event-management"
     ],
-    "license": "MIT",
-    "dependencies": {
-        "lodash.isequal": "^4.5.0"
-    }
+    "license": "MIT"
 }
