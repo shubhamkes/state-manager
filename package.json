@@ -39,11 +39,9 @@
         "webpack-cli": "^3.3.10"
     },
     "keywords": [
-        "drivezy",
-        "user-utility"
+        "state-management",
+        "redux-alternative",
+        "pub-sub-event-management"
     ],
-    "license": "MIT",
-    "dependencies": {
-        "lodash.isequal": "^4.5.0"
-    }
+    "license": "MIT"
 }
