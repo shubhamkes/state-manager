@@ -1,6 +1,6 @@
 {
     "name": "state-manager-utility",
-    "version": "1.0.0",
+    "version": "2.0.1",
     "description": "Global state management library",
     "main": "build/index.js",
     "sideEffects": false,

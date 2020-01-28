@@ -6,14 +6,11 @@ Target - Front End Projects
 
 A tiny yet very powerful state management library. Follows pubsub architecture to maintain the state and broadcast the same. It can be used as an alternative to redux.
 
-
 ### How do I get set up? ###
 
 ```
 npm i state-manager-utility --save
 ```
-
-* If using in React Native, Must have [state-manager-utility](https://github.com/drivezy/storage-utility) as dependency. Follow steps for initialising the package for native
 
 ### Sample 
 ```javascript
@@ -70,8 +67,8 @@ npm i state-manager-utility --save
     export function DeleteEvent({ eventName, isMemoryStore }) 
 ```
 
-* SubscribeToEvent - Subscribe to event.
- As soon as event is subscribed if event was already available for subscription, immediately callback is invoked and after that everytime 'StoreEvent' or 'TransmitToAllEvent' for same eventName will invoke this callback
+* SubscribeToEvent - Event listener method
+calls back on event creation or updation
 
 ```javascript
     /**
@@ -84,7 +81,7 @@ npm i state-manager-utility --save
     SubscribeToEvent({ eventName, callback, extraParams, objParams, isMemoryStore, isTemp = false })
 ```
 
-* UnsubscribeEvent - Unsubscribe to event
+* UnsubscribeEvent - Removes the event listener
 
 ```javascript
     /**
@@ -112,7 +109,6 @@ InitialiseStateManager({ StorageUtils })
 * IsEventAvailable - Tells if an event is already subscribed.
 Can be used to detect if already there is a listener for given eventName
 
-
 ```javascript
     /**
     * @param  {string} {eventName
@@ -121,8 +117,6 @@ Can be used to detect if already there is a listener for given eventName
     */
     IsEventAvailable({ eventName, isMemoryStore, objParams })
 ```
-
-
 
 ### Document Author ###
   [Shubham_Kesarwani](https://github.com/shubhamkes)
